@@ -25,7 +25,7 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
 
-    if args.verbose:
+    if args.no_update or args.verbose:
         def v_print(s):
             print(s)
     else:
@@ -56,4 +56,5 @@ if __name__ == '__main__':
         else:
             v_print(f'[INFO] Skipping db update.')
             v_print(dataset)
+
         time.sleep(args.interval)
