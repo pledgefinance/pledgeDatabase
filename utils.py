@@ -22,6 +22,10 @@ def get_transaction(hash, w3):
     return w3.eth.get_transaction(hash)
 
 
+def get_receipt(hash, w3):
+    return w3.eth.get_transaction_receipt(hash)
+
+
 def get_block(num, w3):
     return w3.eth.get_block(num)
 
