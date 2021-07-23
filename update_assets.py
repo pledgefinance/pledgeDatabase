@@ -50,18 +50,17 @@ if __name__ == '__main__':
     portfolio_address = '0x140691DDAF73942326fEae1Bb1720799d38198dB'
 
     while True:
-        users = {}
-
         user_ref = db.collection('users')
         docs = user_ref.stream()
-        doc_id = ''
+
+        users = []
         for doc in docs:
-            users = doc.to_dict()
-            doc_id = doc.id
+            if doc.id.startswith('0x'):
+                users.append(doc.id)
 
         asset_threads = []
         asset_queue = queue.Queue()
-        for user in users.keys():
+        for user in users:
             t = threading.Thread(target = get_assets, args = (user, portfolio_address, w3, asset_queue))
             asset_threads.append(t)
         for at in asset_threads:
@@ -69,18 +68,14 @@ if __name__ == '__main__':
         for at in asset_threads:
             at.join()
 
-        user_assets = {}
         while not asset_queue.empty():
             user, assets = asset_queue.get()
-            user_assets[user] = {}
-            user_assets[user]['assets'] = assets
-
-        doc_ref = user_ref.document(doc_id)
-        if not args.no_update:
-            doc_ref.set(user_assets, merge = True)
-        else:
-            v_print(f'[INFO] Skipping db update')
-            v_print(users)
+            data = {'assets': assets}
+            doc_ref = user_ref.document(user)
+            if not args.no_update:
+                doc_ref.set(data, merge = True)
+            else:
+                v_print(f'[INFO] Skipping db update {user}')
 
         v_print('Sleeping...')
         time.sleep(args.interval)
