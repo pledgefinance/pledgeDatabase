@@ -72,7 +72,7 @@ if __name__ == '__main__':
         for i in range(num_batches):
             start = 0 + (batch_size * i)
             end = 0 + (batch_size * (i + 1))
-            if end > total_users:
+            if end >= total_users:
                 end = total_users - 1
             current_threads = []
             for j in range(start, end):

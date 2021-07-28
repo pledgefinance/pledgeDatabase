@@ -136,10 +136,21 @@ if __name__ == '__main__':
             data = receipt_queue.get()
             t = threading.Thread(target = process_tx, args = (data, w3, contract_events, store_queue))
             tx_threads.append(t)
-        for tt in tx_threads:
-            tt.start()
-        for tt in tx_threads:
-            tt.join()
+
+        total_txs = len(tx_threads)
+        num_batches = math.ceil(total_txs / batch_size)
+        for j in range(num_batches):
+            start = 0 + (batch_size * j)
+            end = 0 + (batch_size * (j + 1))
+            if end >= total_txs:
+                end = total_txs - 1
+            current_threads = []
+            for k in range(start, end):
+                thread = tx_threads[k]
+                thread.start()
+                current_threads.append(thread)
+            for tt in current_threads:
+                tt.join()
 
         dataset = {}
         while not store_queue.empty():
