@@ -54,9 +54,10 @@ if __name__ == '__main__':
     market_ref = db.collection('markets')
     docs = market_ref.stream()
 
+    dataset = {}
+
     for doc in docs:
-        dataset = doc.to_dict()
-        doc_id = doc.id
+        dataset[doc.id] = doc.to_dict()
 
     while True:
         for market in dataset.keys():
@@ -90,11 +91,10 @@ if __name__ == '__main__':
                 if int(maturity) not in active_maturities:
                     dataset[market]['maturities'][maturity]['active'] = False
 
-        doc_ref = market_ref.document(doc.id)
-        if not args.no_update:
-            doc_ref.set(dataset, merge = True)
-        else:
-            v_print(f'[INFO] Skipping db update.')
-            v_print(dataset)
+        for k in dataset.keys():
+            if not args.no_update:
+                market_ref.document(k).set(dataset[k], merge = True)
+            else:
+                v_print(f'[INFO] Skipping db update for {k}')
 
         time.sleep(args.interval)

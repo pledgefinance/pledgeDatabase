@@ -47,7 +47,8 @@ def update_markets(contracts, w3, db):
         market_doc = {
             'maturityLength': group[1],
             'address': group[3],
-            'currencyId': group[4]
+            'currencyId': group[4],
+            'maturities': {}
         }
         db.collection(collection_name).document(group[3]).set(market_doc)
 
