@@ -1,4 +1,5 @@
 import argparse
+import math
 import queue
 import threading
 import time
@@ -45,6 +46,7 @@ if __name__ == '__main__':
 
     w3 = utils.set_endpoint(args.endpoint)
     db = utils.get_db(args.credentials)
+
     abi = utils.load_abi(portfolio_abi_file)
     # TODO: Change this address when mainnet
     portfolio_address = '0x140691DDAF73942326fEae1Bb1720799d38198dB'
@@ -63,10 +65,21 @@ if __name__ == '__main__':
         for user in users:
             t = threading.Thread(target = get_assets, args = (user, portfolio_address, w3, asset_queue))
             asset_threads.append(t)
-        for at in asset_threads:
-            at.start()
-        for at in asset_threads:
-            at.join()
+
+        batch_size = 10
+        total_users = len(asset_threads)
+        num_batches = math.ceil(total_users / batch_size)
+        for i in range(num_batches):
+            start = 0 + (batch_size * i)
+            end = 0 + (batch_size * (i + 1))
+            if end > total_users:
+                end = total_users - 1
+            current_threads = []
+            for j in range(start, end):
+                asset_threads[j].start()
+                current_threads.append(asset_threads[j])
+            for ct in current_threads:
+                ct.join()
 
         while not asset_queue.empty():
             user, assets = asset_queue.get()
