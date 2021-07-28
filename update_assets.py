@@ -46,10 +46,10 @@ if __name__ == '__main__':
 
     w3 = utils.set_endpoint(args.endpoint)
     db = utils.get_db(args.credentials)
-
     abi = utils.load_abi(portfolio_abi_file)
-    # TODO: Change this address when mainnet
-    portfolio_address = '0x140691DDAF73942326fEae1Bb1720799d38198dB'
+
+    portfolio = db.collection('contracts').document('portfolios').get().to_dict()
+    portfolio_address = portfolio['address']
 
     while True:
         user_ref = db.collection('users')
