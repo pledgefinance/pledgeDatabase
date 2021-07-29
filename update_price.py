@@ -42,19 +42,20 @@ if __name__ == '__main__':
     token_ref = db.collection('tokens')
     docs = token_ref.stream()
     for doc in docs:
-        dataset = doc.to_dict()
-        doc_id = doc.id
+        dataset[doc.id] = doc.to_dict()
 
     while True:
         for t in dataset.keys():
-            oracle_addr = dataset[t]['chainlink']
-            dataset[t]['price'] = str(get_token_price(oracle_addr, abi, w3))
+            if not dataset[t].get('chainlink', None) is None:
+                oracle_addr = dataset[t]['chainlink']
+                price = str(get_token_price(oracle_addr, abi, w3))
 
-        doc_ref = token_ref.document(doc.id)
-        if not args.no_update:
-            doc_ref.set(dataset, merge = True)
-        else:
-            v_print(f'[INFO] Skipping db update.')
-            v_print(dataset)
+                data = {
+                    'price': price,
+                }
 
+                if not args.no_update:
+                    db.collection('tokens').document(t).set(data, merge = True)
+
+        print('Sleeping...')
         time.sleep(args.interval)
