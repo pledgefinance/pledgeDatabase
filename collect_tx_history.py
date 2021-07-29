@@ -6,7 +6,17 @@ import utils
 
 
 market_abi_file = './abi/CashMarket.json'
-market_address = '0x56fe9b91db8d72d6660ad4623459ccb72095cd4b'
+
+
+def get_market_addresses(db):
+    market_ref = db.collection('markets')
+    docs = market_ref.stream()
+
+    market_list = []
+    for doc in docs:
+        market_list.append(doc.doc_id)
+
+    return market_list
 
 
 def process_block(block_num, w3, out):
@@ -16,8 +26,7 @@ def process_block(block_num, w3, out):
         out.put((block.timestamp, tx))
 
 
-valid_addresses = [market_address]
-def process_tx(data, w3, events, out):
+def process_tx(data, valid_addresses, abi, w3, events, out):
     time, hash = data
     receipt = utils.get_receipt(hash, w3)
 
@@ -28,7 +37,7 @@ def process_tx(data, w3, events, out):
         tx['block'] = receipt.blockNumber
         tx['time'] = time
 
-        result = process_logs(market_address, receipt, events, w3)
+        result = process_logs(receipt.to.lower(), abi, receipt, events, w3)
         if result is not None:
             name, maturity, fCash, cash = result
             tx['type'] = name
@@ -44,14 +53,14 @@ def process_tx(data, w3, events, out):
 
 
 valid_events = ['TakefCash', 'TakeCurrentCash', 'AddLiquidity', 'RemoveLiquidity']
-def process_logs(address, receipt, events, w3):
+def process_logs(address, abi, receipt, events, w3):
     contract = w3.eth.contract(utils.convert_address(address), abi = abi)
 
     result = None
-    # Note: Existing loop on first log for CashMarket
+    # Note: Exiting loop on first log for the to CashMarket
     logs = receipt.logs
     for l in logs:
-        if l['address'] != market_address:
+        if l['address'].lower() != address:
             continue
         receipt_hex = w3.toHex(l['topics'][0])
         name = events.get(receipt_hex, None)
@@ -62,10 +71,11 @@ def process_logs(address, receipt, events, w3):
             a = decoded.args
             result = (name, a.maturity, a.fCash, a.cash)
             break
+
     return result
 
 
-def get_contract_events(address, w3):
+def get_contract_events(address, abi, w3):
     contract = w3.eth.contract(utils.convert_address(address), abi = abi)
     events = [event for event in contract.abi if event['type'] == 'event']
 
@@ -82,12 +92,77 @@ def get_contract_events(address, w3):
     return event_sigs
 
 
+def update_tx(start, end, batch_size, w3, db, no_update):
+    abi = utils.load_abi(market_abi_file)
+
+    # market_addresses = ['0x56fe9b91db8d72d6660ad4623459ccb72095cd4b']
+    market_addresses = get_market_addresses(db)
+    contract_events = get_contract_events(market_addresses[0], abi, w3)
+
+    total_blocks = end - start
+    block_batches = math.ceil(total_blocks / batch_size)
+
+    for i in range(block_batches):
+        batch_start = start + (batch_size * i)
+        batch_end = min(start + (batch_size * (i + 1)), end)
+
+        block_threads = []
+        receipt_queue = queue.Queue()
+        for block_num in range(batch_start, batch_end):
+            t = threading.Thread(target = process_block, args = (block_num, w3, receipt_queue))
+            block_threads.append(t)
+
+        for bt in block_threads:
+            bt.start()
+        for bt in block_threads:
+            bt.join()
+
+        tx_threads = []
+        store_queue = queue.Queue()
+        while not receipt_queue.empty():
+            data = receipt_queue.get()
+            t = threading.Thread(target = process_tx, args = (data, market_addresses, abi, w3, contract_events, store_queue))
+            tx_threads.append(t)
+
+        total_txs = len(tx_threads)
+        tx_batches = math.ceil(total_txs / batch_size)
+        for j in range(tx_batches):
+            tx_index_start = 0 + (batch_size * j)
+            tx_index_end = min(0 + (batch_size * (j + 1)), total_txs - 1)
+
+            current_threads = []
+            for k in range(tx_index_start, tx_index_end):
+                t = tx_threads[k]
+                current_threads.append(t)
+
+        for ct in current_threads:
+            ct.start()
+        for ct in current_threads:
+            ct.join()
+
+        tx_data = {}
+        while not store_queue.empty():
+            hash, tx = store_queue.get()
+            sender = tx['from'].lower()
+            if tx_data.get(sender, None) is None:
+                tx_data[sender] = {}
+                tx_data[sender]['txs'] = {}
+            tx_data[sender]['txs'][hash] = tx
+
+        for user in tx_data.keys():
+            if not no_update:
+                user_doc = db.collection('users').document(user).set(tx_data[user], merge = True)
+
+        print(tx_data)
+
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--endpoint', help = 'Blockchain endpoint to connect to')
     parser.add_argument('--credentials', help = 'Path to Firebase credentials')
     parser.add_argument('--start', type = int, help = 'Start block')
     parser.add_argument('--end', type = int, help = 'End block (not inclusive)')
+    parser.add_argument('--batch-size', type = int, default = 20, help = 'Batch size')
     parser.add_argument('--no-update', action = 'store_true', help = 'No DB write for debug')
     parser.add_argument('--verbose', action = 'store_true', help = 'Verbose for debug')
 
@@ -102,69 +177,5 @@ if __name__ == '__main__':
 
     w3 = utils.set_endpoint(args.endpoint)
     db = utils.get_db(args.credentials)
-    abi = utils.load_abi(market_abi_file)
 
-    contract_events = get_contract_events(market_address, w3)
-
-    user_ref = db.collection('users')
-    docs = user_ref.stream()
-
-    batch_size = 20
-    total_blocks = args.end - args.start
-    num_intervals = math.ceil(total_blocks / batch_size)
-
-    for i in range(num_intervals):
-        curr_block = args.start + (batch_size * i)
-        end_block = args.start + (batch_size * (i + 1))
-        if end_block > args.end:
-            end_block = args.end
-        v_print(f'{i}: {curr_block}-{end_block}')
-
-        block_threads = []
-        receipt_queue = queue.Queue()
-        for block_num in range(curr_block, end_block):
-            t = threading.Thread(target = process_block, args = (block_num, w3, receipt_queue))
-            block_threads.append(t)
-        for bt in block_threads:
-            bt.start()
-        for bt in block_threads:
-            bt.join()
-
-        tx_threads = []
-        store_queue = queue.Queue()
-        while not receipt_queue.empty():
-            data = receipt_queue.get()
-            t = threading.Thread(target = process_tx, args = (data, w3, contract_events, store_queue))
-            tx_threads.append(t)
-
-        total_txs = len(tx_threads)
-        num_batches = math.ceil(total_txs / batch_size)
-        for j in range(num_batches):
-            start = 0 + (batch_size * j)
-            end = 0 + (batch_size * (j + 1))
-            if end >= total_txs:
-                end = total_txs - 1
-            current_threads = []
-            for k in range(start, end):
-                thread = tx_threads[k]
-                thread.start()
-                current_threads.append(thread)
-            for tt in current_threads:
-                tt.join()
-
-        dataset = {}
-        while not store_queue.empty():
-            hash, tx = store_queue.get()
-            sender = tx['from'].lower()
-            if dataset.get(sender, None) is None:
-                dataset[sender] = {}
-                dataset[sender]['txs'] = {}
-            dataset[sender]['txs'][hash] = tx
-
-        for user in dataset.keys():
-            doc_ref = user_ref.document(user)
-            if not args.no_update:
-                doc_ref.set(dataset[user], merge = True)
-            else:
-                v_print(f'[INFO] Skipping db update.')
-                v_print(dataset)
+    update_tx(args.start, args.end, args.batch_size, w3, db, args.no_update)
