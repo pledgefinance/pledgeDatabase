@@ -97,4 +97,5 @@ if __name__ == '__main__':
             else:
                 v_print(f'[INFO] Skipping db update for {k}')
 
+        print('Sleeping...')
         time.sleep(args.interval)
