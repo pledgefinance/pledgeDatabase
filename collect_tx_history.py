@@ -14,7 +14,7 @@ def get_market_addresses(db):
 
     market_list = []
     for doc in docs:
-        market_list.append(doc.doc_id)
+        market_list.append(doc.id)
 
     return market_list
 
@@ -30,7 +30,7 @@ def process_tx(data, valid_addresses, abi, w3, events, out):
     time, hash = data
     receipt = utils.get_receipt(hash, w3)
 
-    if receipt.to is not None and receipt.to.lower() in valid_addresses:
+    if receipt.to is not None and receipt.to in valid_addresses:
         tx = {}
         tx['from'] = receipt['from']
         tx['to'] = receipt.to
@@ -135,10 +135,10 @@ def update_tx(start, end, batch_size, w3, db, no_update):
                 t = tx_threads[k]
                 current_threads.append(t)
 
-        for ct in current_threads:
-            ct.start()
-        for ct in current_threads:
-            ct.join()
+            for ct in current_threads:
+                ct.start()
+            for ct in current_threads:
+                ct.join()
 
         tx_data = {}
         while not store_queue.empty():
