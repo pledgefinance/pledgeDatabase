@@ -39,6 +39,7 @@ def load_abi(file):
 def convert_address(address):
     return Web3.toChecksumAddress(address)
 
+
 def get_db(key):
     cred = credentials.Certificate(key)
     firebase_admin.initialize_app(cred)
