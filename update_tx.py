@@ -49,4 +49,5 @@ if __name__ == '__main__':
 
         update_checkpoint(current_block, db)
 
+        v_print('Sleeping...')
         time.sleep(args.interval)
