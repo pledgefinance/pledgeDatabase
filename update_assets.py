@@ -71,9 +71,7 @@ if __name__ == '__main__':
         num_batches = math.ceil(total_users / batch_size)
         for i in range(num_batches):
             start = 0 + (batch_size * i)
-            end = 0 + (batch_size * (i + 1))
-            if end >= total_users:
-                end = total_users - 1
+            end = min(0 + (batch_size * (i + 1)), total_users)
             current_threads = []
             for j in range(start, end):
                 asset_threads[j].start()
