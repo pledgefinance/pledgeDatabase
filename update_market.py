@@ -51,15 +51,15 @@ if __name__ == '__main__':
     dataset = {}
     doc_id = ''
 
-    market_ref = db.collection('markets')
-    docs = market_ref.stream()
-
-    dataset = {}
-
-    for doc in docs:
-        dataset[doc.id] = doc.to_dict()
-
     while True:
+        market_ref = db.collection('markets')
+        docs = market_ref.stream()
+
+        dataset = {}
+
+        for doc in docs:
+            dataset[doc.id] = doc.to_dict()
+
         for market in dataset.keys():
             market_address = dataset[market]['address']
             active_maturities = get_active_maturities(market_address, abi, w3)
