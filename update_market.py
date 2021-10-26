@@ -65,26 +65,29 @@ if __name__ == '__main__':
             active_maturities = get_active_maturities(market_address, abi, w3)
 
             for maturity in active_maturities:
+                updated_maturity = {}
                 m = str(maturity)
                 if dataset[market]['maturities'].get(m, None) is None:
                     v_print(f'New maturity {m}')
                     dataset[market]['maturities'][m] = {}
-                dataset[market]['maturities'][m]['active'] = True
+                updated_maturity['active'] = True
                 try:
                     rate = get_rate(maturity, market_address, abi, w3)
-                    dataset[market]['maturities'][m]['rate'] = str(rate)
+                    updated_maturity['rate'] = str(rate)
                     # FIXME: Update hardcoded APR fomula
-                    dataset[market]['maturities'][m]['apr'] = str(((rate * 1e-9) - 1) * 12)
+                    updated_maturity['apr'] = str(((rate * 1e-9) - 1) * 12)
 
                     data = get_market(maturity, market_address, abi, w3)
-                    dataset[market]['maturities'][m]['fCash'] = str(data[0])
-                    dataset[market]['maturities'][m]['liquidity'] = str(data[1])
-                    dataset[market]['maturities'][m]['currentCash'] = str(data[2])
-                    dataset[market]['maturities'][m]['rateAnchor'] = str(data[3])
-                    dataset[market]['maturities'][m]['rateScalar'] = str(data[4])
-                    dataset[market]['maturities'][m]['lastImpliedRate'] = str(data[5])
+                    updated_maturity['fCash'] = str(data[0])
+                    updated_maturity['liquidity'] = str(data[1])
+                    updated_maturity['currentCash'] = str(data[2])
+                    updated_maturity['rateAnchor'] = str(data[3])
+                    updated_maturity['rateScalar'] = str(data[4])
+                    updated_maturity['lastImpliedRate'] = str(data[5])
                 except Exception as e:
                     v_print(f'[ERROR] Maturity {m} not set up')
+
+                dataset[market]['maturities'][m] = updated_maturity
 
             # Note: Never been tested
             for maturity in dataset[market]['maturities'].keys():

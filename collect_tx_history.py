@@ -65,7 +65,7 @@ def process_tx(data, valid_addresses, abi, w3, events, out):
 
 valid_events = ['TakefCash', 'TakeCurrentCash', 'AddLiquidity', 'RemoveLiquidity']
 def process_logs(address, abi, receipt, events, w3):
-    address = '0xeeCa551d77e9CEf29883811df96B08BD01946ec9'
+    print(address)
     contract = w3.eth.contract(utils.convert_address(address), abi = abi)
 
     result = None
@@ -107,10 +107,14 @@ def get_contract_events(address, abi, w3):
 def update_tx(start, end, batch_size, w3, db, no_update):
     abi = utils.load_abi(market_abi_file)
 
-    market_addresses = get_trade_addresses(db)
+    market_addresses = get_market_addresses(db)
     contract_events = get_contract_events(market_addresses[0], abi, w3)
 
     trade_addresses = get_trade_addresses(db)
+
+    valid_addresses = []
+    valid_addresses.extend(market_addresses)
+    valid_addresses.extend(trade_addresses)
 
     total_blocks = end - start
     block_batches = math.ceil(total_blocks / batch_size)
@@ -134,7 +138,7 @@ def update_tx(start, end, batch_size, w3, db, no_update):
         store_queue = queue.Queue()
         while not receipt_queue.empty():
             data = receipt_queue.get()
-            t = threading.Thread(target = process_tx, args = (data, trade_addresses, abi, w3, contract_events, store_queue))
+            t = threading.Thread(target = process_tx, args = (data, valid_addresses, abi, w3, contract_events, store_queue))
             tx_threads.append(t)
 
         total_txs = len(tx_threads)
