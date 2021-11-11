@@ -6,14 +6,14 @@ market_abi_file = './abi/CashMarket.json'
 
 
 def get_market(maturity, address, abi, w3):
-    contract = w3.eth.contract(utils.convert_address(address), abi = abi)
+    contract = w3.eth.contract(utils.convert_address(address), abi=abi)
     data = contract.functions.getMarket(maturity).call()
 
     return data
 
 
 def get_rate(maturity, address, abi, w3):
-    contract = w3.eth.contract(utils.convert_address(address), abi = abi)
+    contract = w3.eth.contract(utils.convert_address(address), abi=abi)
     rate = contract.functions.getRate(maturity).call()
 
     # Note: getRate returns (rate, bool), only return the rate value
@@ -21,7 +21,7 @@ def get_rate(maturity, address, abi, w3):
 
 
 def get_active_maturities(address, abi, w3):
-    contract = w3.eth.contract(utils.convert_address(address), abi = abi)
+    contract = w3.eth.contract(utils.convert_address(address), abi=abi)
     active = contract.functions.getActiveMaturities().call()
 
     return active
@@ -29,11 +29,14 @@ def get_active_maturities(address, abi, w3):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--endpoint', help = 'Blockchain endpoint to connect to')
-    parser.add_argument('--credentials', help = 'Path to Firebase credentials')
-    parser.add_argument('--interval', type = int, help = 'Time between updates in seconds')
-    parser.add_argument('--no-update', action = 'store_true', help = 'No DB write for debug')
-    parser.add_argument('--verbose', action = 'store_true', help = 'Verbose for debug')
+    parser.add_argument('--endpoint', help='Blockchain endpoint to connect to')
+    parser.add_argument('--credentials', help='Path to Firebase credentials')
+    parser.add_argument('--interval', type=int,
+                        help='Time between updates in seconds')
+    parser.add_argument('--no-update', action='store_true',
+                        help='No DB write for debug')
+    parser.add_argument('--verbose', action='store_true',
+                        help='Verbose for debug')
 
     args = parser.parse_args()
 
@@ -96,7 +99,7 @@ if __name__ == '__main__':
 
         for k in dataset.keys():
             if not args.no_update:
-                market_ref.document(k).set(dataset[k], merge = True)
+                market_ref.document(k).set(dataset[k], merge=True)
             else:
                 v_print(f'[INFO] Skipping db update for {k}')
 

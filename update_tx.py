@@ -19,12 +19,16 @@ def update_checkpoint(checkpoint, db):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--endpoint', help = 'Blockchain endpoitn to connect to')
-    parser.add_argument('--credentials', help = 'Path to Firebase credentials')
-    parser.add_argument('--interval', type = int, help = 'Time between updates in seconds')
-    parser.add_argument('--batch_size', type = int, default = 20, help = 'Batch size')
-    parser.add_argument('--verbose', action = 'store_true', help = 'Verbose for debug')
-    parser.add_argument('--no-update', action = 'store_true', help = 'No DB write for debug')
+    parser.add_argument('--endpoint', help='Blockchain endpoitn to connect to')
+    parser.add_argument('--credentials', help='Path to Firebase credentials')
+    parser.add_argument('--interval', type=int,
+                        help='Time between updates in seconds')
+    parser.add_argument('--batch_size', type=int,
+                        default=20, help='Batch size')
+    parser.add_argument('--verbose', action='store_true',
+                        help='Verbose for debug')
+    parser.add_argument('--no-update', action='store_true',
+                        help='No DB write for debug')
 
     args = parser.parse_args()
 
@@ -45,7 +49,8 @@ if __name__ == '__main__':
         current_block = utils.get_latest_block(w3)
         v_print(f'Current block: {current_block}')
 
-        update_tx(checkpoint, current_block, args.batch_size, w3, db, args.no_update)
+        update_tx(checkpoint, current_block,
+                  args.batch_size, w3, db, args.no_update)
 
         update_checkpoint(current_block, db)
 

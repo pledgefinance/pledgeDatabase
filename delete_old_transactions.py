@@ -25,10 +25,13 @@ def delete_loop(db, maturity, no_update):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--credentials', help = 'Path to Firebase credentials')
-    parser.add_argument('--maturity', type = int, help = 'Maturity to prune transactions for')
-    parser.add_argument('--no-update', action = 'store_true', help = 'No DB write for debug')
-    parser.add_argument('--verbose', action = 'store_true', help = 'Verbose for debug')
+    parser.add_argument('--credentials', help='Path to Firebase credentials')
+    parser.add_argument('--maturity', type=int,
+                        help='Maturity to prune transactions for')
+    parser.add_argument('--no-update', action='store_true',
+                        help='No DB write for debug')
+    parser.add_argument('--verbose', action='store_true',
+                        help='Verbose for debug')
 
     args = parser.parse_args()
 
@@ -40,7 +43,8 @@ if __name__ == '__main__':
             return
 
     if not args.no_update:
-        ans = input(f'[WARNING] Removing transactions for {args.maturity} maturity. Continue? (Y/N)')
+        ans = input(
+            f'[WARNING] Removing transactions for {args.maturity} maturity. Continue? (Y/N)')
         if ans != 'Y':
             print(f'[INFO] Transaction pruning cancelled. Exiting...')
             exit()

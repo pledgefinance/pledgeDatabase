@@ -7,9 +7,10 @@ from firebase_admin import firestore
 from web3 import Web3
 from web3.middleware import geth_poa_middleware
 
+
 def set_endpoint(endpoint):
     w3 = Web3(Web3.HTTPProvider(endpoint))
-    w3.middleware_onion.inject(geth_poa_middleware, layer = 0)
+    w3.middleware_onion.inject(geth_poa_middleware, layer=0)
 
     return w3
 

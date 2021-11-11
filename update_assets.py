@@ -10,7 +10,7 @@ portfolio_abi_file = './abi/Portfolios.json'
 
 
 def get_assets(user, address, w3, out):
-    contract = w3.eth.contract(utils.convert_address(address), abi = abi)
+    contract = w3.eth.contract(utils.convert_address(address), abi=abi)
     assets = contract.functions.getAssets(utils.convert_address(user)).call()
 
     formatted_assets = []
@@ -29,11 +29,14 @@ def get_assets(user, address, w3, out):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--endpoint', help = 'Blockchain endpoint to connect to')
-    parser.add_argument('--credentials', help = 'Path to Firebase credentials')
-    parser.add_argument('--interval', type = int, help = 'Time between updates in seconds')
-    parser.add_argument('--no-update', action = 'store_true', help = 'No DB write for debug')
-    parser.add_argument('--verbose', action = 'store_true', help = 'Verbose for debug')
+    parser.add_argument('--endpoint', help='Blockchain endpoint to connect to')
+    parser.add_argument('--credentials', help='Path to Firebase credentials')
+    parser.add_argument('--interval', type=int,
+                        help='Time between updates in seconds')
+    parser.add_argument('--no-update', action='store_true',
+                        help='No DB write for debug')
+    parser.add_argument('--verbose', action='store_true',
+                        help='Verbose for debug')
 
     args = parser.parse_args()
 
@@ -48,7 +51,8 @@ if __name__ == '__main__':
     db = utils.get_db(args.credentials)
     abi = utils.load_abi(portfolio_abi_file)
 
-    portfolio = db.collection('contracts').document('portfolios').get().to_dict()
+    portfolio = db.collection('contracts').document(
+        'portfolios').get().to_dict()
     portfolio_address = portfolio['address']
 
     while True:
@@ -63,7 +67,8 @@ if __name__ == '__main__':
         asset_threads = []
         asset_queue = queue.Queue()
         for user in users:
-            t = threading.Thread(target = get_assets, args = (user, portfolio_address, w3, asset_queue))
+            t = threading.Thread(target=get_assets, args=(
+                user, portfolio_address, w3, asset_queue))
             asset_threads.append(t)
 
         batch_size = 10
@@ -84,7 +89,7 @@ if __name__ == '__main__':
             data = {'assets': assets}
             doc_ref = user_ref.document(user)
             if not args.no_update:
-                doc_ref.set(data, merge = True)
+                doc_ref.set(data, merge=True)
             else:
                 v_print(f'[INFO] Skipping db update {user}')
 

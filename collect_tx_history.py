@@ -18,6 +18,7 @@ def get_market_addresses(db):
 
     return market_list
 
+
 def get_trade_addresses(db):
     contract_ref = db.collection('contracts')
     docs = contract_ref.stream()
@@ -63,10 +64,13 @@ def process_tx(data, valid_addresses, abi, w3, events, out):
             out.put((hash.hex(), tx))
 
 
-valid_events = ['TakefCash', 'TakeCurrentCash', 'AddLiquidity', 'RemoveLiquidity']
+valid_events = ['TakefCash', 'TakeCurrentCash',
+                'AddLiquidity', 'RemoveLiquidity']
+
+
 def process_logs(address, abi, receipt, events, w3):
     print(address)
-    contract = w3.eth.contract(utils.convert_address(address), abi = abi)
+    contract = w3.eth.contract(utils.convert_address(address), abi=abi)
 
     result = None
     # Note: Exiting loop on first log for the CashMarket
@@ -88,7 +92,7 @@ def process_logs(address, abi, receipt, events, w3):
 
 
 def get_contract_events(address, abi, w3):
-    contract = w3.eth.contract(utils.convert_address(address), abi = abi)
+    contract = w3.eth.contract(utils.convert_address(address), abi=abi)
     events = [event for event in contract.abi if event['type'] == 'event']
 
     event_sigs = {}
@@ -98,7 +102,7 @@ def get_contract_events(address, abi, w3):
         inputs = ','.join(inputs)
 
         event_sig = f'{name}({inputs})'
-        event_hex = w3.toHex(w3.keccak(text = event_sig))
+        event_hex = w3.toHex(w3.keccak(text=event_sig))
         event_sigs[event_hex] = name
 
     return event_sigs
@@ -126,7 +130,8 @@ def update_tx(start, end, batch_size, w3, db, no_update):
         block_threads = []
         receipt_queue = queue.Queue()
         for block_num in range(batch_start, batch_end):
-            t = threading.Thread(target = process_block, args = (block_num, w3, receipt_queue))
+            t = threading.Thread(target=process_block,
+                                 args=(block_num, w3, receipt_queue))
             block_threads.append(t)
 
         for bt in block_threads:
@@ -138,7 +143,8 @@ def update_tx(start, end, batch_size, w3, db, no_update):
         store_queue = queue.Queue()
         while not receipt_queue.empty():
             data = receipt_queue.get()
-            t = threading.Thread(target = process_tx, args = (data, valid_addresses, abi, w3, contract_events, store_queue))
+            t = threading.Thread(target=process_tx, args=(
+                data, valid_addresses, abi, w3, contract_events, store_queue))
             tx_threads.append(t)
 
         total_txs = len(tx_threads)
@@ -168,20 +174,24 @@ def update_tx(start, end, batch_size, w3, db, no_update):
 
         for user in tx_data.keys():
             if not no_update:
-                user_doc = db.collection('users').document(user).set(tx_data[user], merge = True)
+                user_doc = db.collection('users').document(
+                    user).set(tx_data[user], merge=True)
 
         print(tx_data)
 
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--endpoint', help = 'Blockchain endpoint to connect to')
-    parser.add_argument('--credentials', help = 'Path to Firebase credentials')
-    parser.add_argument('--start', type = int, help = 'Start block')
-    parser.add_argument('--end', type = int, help = 'End block (not inclusive)')
-    parser.add_argument('--batch-size', type = int, default = 20, help = 'Batch size')
-    parser.add_argument('--no-update', action = 'store_true', help = 'No DB write for debug')
-    parser.add_argument('--verbose', action = 'store_true', help = 'Verbose for debug')
+    parser.add_argument('--endpoint', help='Blockchain endpoint to connect to')
+    parser.add_argument('--credentials', help='Path to Firebase credentials')
+    parser.add_argument('--start', type=int, help='Start block')
+    parser.add_argument('--end', type=int, help='End block (not inclusive)')
+    parser.add_argument('--batch-size', type=int,
+                        default=20, help='Batch size')
+    parser.add_argument('--no-update', action='store_true',
+                        help='No DB write for debug')
+    parser.add_argument('--verbose', action='store_true',
+                        help='Verbose for debug')
 
     args = parser.parse_args()
 

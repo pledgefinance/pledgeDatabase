@@ -4,6 +4,8 @@ import utils
 
 
 valid_contracts = ['escrow', 'portfolios', 'erc1155', 'erc1155trade']
+
+
 def setup_contracts(contracts, db):
     print(f'Setting up contract collection')
 
@@ -30,13 +32,15 @@ def update_metadata(contracts, db):
 
 num_markets = 1
 portfolio_abi_file = './abi/Portfolios.json'
+
+
 def update_markets(contracts, w3, db):
     print(f'Getting market info')
 
     abi = utils.load_abi(portfolio_abi_file)
     address = contracts['portfolios']
 
-    contract = w3.eth.contract(utils.convert_address(address), abi = abi)
+    contract = w3.eth.contract(utils.convert_address(address), abi=abi)
     # Change the ids for later
     ids = list(range(1, num_markets + 1))
     cashGroups = contract.functions.getCashGroups(ids).call()
@@ -54,6 +58,8 @@ def update_markets(contracts, w3, db):
 
 
 token_list_file = './tokens.json'
+
+
 def setup_tokens(db):
     print(f'Setting up tokens')
 
@@ -66,11 +72,15 @@ def setup_tokens(db):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--credentials', help = 'Path to Firebase credentials')
-    parser.add_argument('--endpoint', required = False, help = 'Blockchain endpoint to connect to')
-    parser.add_argument('--deploy-json', required = False, help = 'Path to inital setup data (Not required for reset)')
-    parser.add_argument('--token-json', required = False, help = 'Path to token setup data (Not required for reset)')
-    parser.add_argument('--reset', action = 'store_true', help = 'Reset Firebase DB')
+    parser.add_argument('--credentials', help='Path to Firebase credentials')
+    parser.add_argument('--endpoint', required=False,
+                        help='Blockchain endpoint to connect to')
+    parser.add_argument('--deploy-json', required=False,
+                        help='Path to inital setup data (Not required for reset)')
+    parser.add_argument('--token-json', required=False,
+                        help='Path to token setup data (Not required for reset)')
+    parser.add_argument('--reset', action='store_true',
+                        help='Reset Firebase DB')
 
     args = parser.parse_args()
 
