@@ -78,7 +78,8 @@ if __name__ == '__main__':
                     rate = get_rate(maturity, market_address, abi, w3)
                     updated_maturity['rate'] = str(rate)
                     # FIXME: Update hardcoded APR fomula
-                    updated_maturity['apr'] = str(((rate * 1e-9) - 1) * 12)
+                    updated_maturity['apr'] = str(
+                        100 * (((rate * 1e-9) - 1) * 12))
 
                     data = get_market(maturity, market_address, abi, w3)
                     updated_maturity['fCash'] = str(data[0])
